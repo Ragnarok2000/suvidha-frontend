@@ -33,6 +33,34 @@ const History = () => {
     alert('Summary copied to clipboard');
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    const options = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return date.toLocaleString('en-US', options);
+  };
+
+  const getLengthBadgeColor = (length) => {
+    switch(length) {
+      case 'short': return 'bg-green-100 text-green-700';
+      case 'long': return 'bg-purple-100 text-purple-700';
+      default: return 'bg-blue-100 text-blue-700';
+    }
+  };
+
+  // ✅ NEW: Count words in summary
+  const countWords = (text) => {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).length;
+  };
+
   return (
     <>
       {/* ✅ Watermark image floating above everything */}
@@ -68,6 +96,25 @@ const History = () => {
                 key={`${item.id}-${index}`}
                 className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
               >
+                {/* Timestamp & Length Badge */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-sm text-gray-500">
+                    🕐 {formatTimestamp(item.createdAt)}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {/* ✅ Word Count Badge */}
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                      {countWords(item.summaryText)} words
+                    </span>
+                    {/* Length Badge */}
+                    {item.summaryLength && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getLengthBadgeColor(item.summaryLength)}`}>
+                        {item.summaryLength.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-700 mb-2">
                     📝 Original Text

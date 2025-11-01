@@ -28,6 +28,34 @@ const ArticleHistory = () => {
       });
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    const options = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return date.toLocaleString('en-US', options);
+  };
+
+  const getLengthBadgeColor = (length) => {
+    switch(length) {
+      case 'short': return 'bg-green-100 text-green-700';
+      case 'long': return 'bg-purple-100 text-purple-700';
+      default: return 'bg-blue-100 text-blue-700';
+    }
+  };
+
+  // ✅ NEW: Count words in summary
+  const countWords = (text) => {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).length;
+  };
+
   if (loading) return <div className="text-center mt-10 text-gray-600">Loading articles...</div>;
   if (error) return <div className="text-center mt-10 text-red-500">{error}</div>;
   if (articles.length === 0) return <div className="text-center mt-10 text-gray-500">No articles found.</div>;
@@ -59,6 +87,25 @@ const ArticleHistory = () => {
               key={article.id}
               className="bg-white shadow-md rounded-lg p-6 border border-gray-200 hover:shadow-lg transition duration-300"
             >
+              {/* Timestamp & Badges */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-500">
+                  🕐 {formatTimestamp(article.createdAt)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {/* ✅ Word Count Badge */}
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                    {countWords(article.summary)} words
+                  </span>
+                  {/* Length Badge */}
+                  {article.summaryLength && (
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getLengthBadgeColor(article.summaryLength)}`}>
+                      {article.summaryLength.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <p className="mb-2">
                 <span className="font-semibold text-gray-700">🔗 URL:</span>{' '}
                 <a
