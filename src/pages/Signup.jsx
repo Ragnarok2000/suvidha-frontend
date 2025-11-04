@@ -7,23 +7,39 @@ import * as Yup from "yup";
 const Signup = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState("");
+  const [passwordChecks, setPasswordChecks] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  });
 
   const initialValues = { username: "", password: "" };
 
+  // Updated validation schema with strong password requirements
   const validationSchema = Yup.object({
     username: Yup.string()
       .email("Please enter a valid email address")
       .required("Username is required"),
     password: Yup.string()
-      .min(6, "Password must be at least 6 characters")
+      .min(8, "Password must be at least 8 characters")
+      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/\d/, "Password must contain at least one number")
+      .matches(/[@#$%^&+=!]/, "Password must contain at least one special character (@#$%^&+=!)")
       .required("Password is required"),
   });
 
-  const checkPasswordStrength = (password) => {
-    if (password.length < 6) return "Weak";
-    if (/[A-Z]/.test(password) && /\d/.test(password) && password.length >= 8) return "Strong";
-    return "Medium";
+  // Check password requirements in real-time
+  const checkPasswordRequirements = (password) => {
+    setPasswordChecks({
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecialChar: /[@#$%^&+=!]/.test(password),
+    });
   };
 
   const handleSubmit = async (values) => {
@@ -31,9 +47,19 @@ const Signup = () => {
       await signup(values);
       alert("Signup successful! Please log in.");
       navigate("/login");
-    // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      alert("Signup failed");
+      // Display backend error message if available
+      if (err.response && err.response.data) {
+        const errors = err.response.data;
+        if (typeof errors === 'object') {
+          const errorMsg = Object.values(errors).join(', ');
+          alert(`Signup failed: ${errorMsg}`);
+        } else {
+          alert(`Signup failed: ${errors}`);
+        }
+      } else {
+        alert("Signup failed. Please try again.");
+      }
     }
   };
 
@@ -45,24 +71,27 @@ const Signup = () => {
         </h2>
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
           <Form className="space-y-5">
+            {/* Username Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <Field
                 name="username"
-                placeholder="Choose a Email as Username"
+                placeholder="Choose an Email as Username"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
               <ErrorMessage name="username" component="div" className="text-red-500 text-sm mt-1" />
             </div>
+
+            {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <div className="relative">
                 <Field
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Create a strong password"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  onKeyUp={(e) => setPasswordStrength(checkPasswordStrength(e.target.value))}
+                  onKeyUp={(e) => checkPasswordRequirements(e.target.value)}
                 />
                 <button
                   type="button"
@@ -73,20 +102,31 @@ const Signup = () => {
                 </button>
               </div>
               <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
-              {passwordStrength && (
-                <div
-                  className={`text-sm mt-1 ${
-                    passwordStrength === "Strong"
-                      ? "text-green-600"
-                      : passwordStrength === "Medium"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  Password Strength: {passwordStrength}
-                </div>
-              )}
+
+              {/* Password Requirements Checklist */}
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Password must contain:</p>
+                <ul className="space-y-1 text-xs">
+                  <li className={passwordChecks.minLength ? "text-green-600" : "text-gray-500"}>
+                    {passwordChecks.minLength ? "✓" : "○"} At least 8 characters
+                  </li>
+                  <li className={passwordChecks.hasUppercase ? "text-green-600" : "text-gray-500"}>
+                    {passwordChecks.hasUppercase ? "✓" : "○"} One uppercase letter (A-Z)
+                  </li>
+                  <li className={passwordChecks.hasLowercase ? "text-green-600" : "text-gray-500"}>
+                    {passwordChecks.hasLowercase ? "✓" : "○"} One lowercase letter (a-z)
+                  </li>
+                  <li className={passwordChecks.hasNumber ? "text-green-600" : "text-gray-500"}>
+                    {passwordChecks.hasNumber ? "✓" : "○"} One number (0-9)
+                  </li>
+                  <li className={passwordChecks.hasSpecialChar ? "text-green-600" : "text-gray-500"}>
+                    {passwordChecks.hasSpecialChar ? "✓" : "○"} One special character (@#$%^&+=!)
+                  </li>
+                </ul>
+              </div>
             </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
               className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700 transition duration-300 shadow-md"
